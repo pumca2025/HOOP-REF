@@ -1,0 +1,5 @@
+{
+  "name": "HoopRef",
+  "description": "An AI-powered basketball rule assistant that interprets complex game situations to provide official rules, explanations, and referee decisions.",
+  "requestFramePermissions": []
+}
