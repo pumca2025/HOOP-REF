@@ -1,8 +1,10 @@
 export interface RuleAnalysis {
-  situation: string;
-  ruleApplied: string;
-  article: string;
-  decision: string;
+  official_decision: string;
+  infraction_type: string;
+  situation_summary: string;
+  applied_rules: string[];
+  detailed_reasoning: string;
+  rule_book_references: string[];
   penalty: string;
   id?: string;
   timestamp?: string;

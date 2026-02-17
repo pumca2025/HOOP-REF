@@ -5,11 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface HistoryEntry {
     _id: string;
-    situation: string;
-    ruleApplied: string;
-    article: string;
-    decision: string;
-    penalty: string;
+    situation: string; // User's original input
+    situationSummary?: string;
+    officialDecision?: string;
+    infractionType?: string;
+    appliedRules?: string[];
+    detailedReasoning?: string;
+    ruleBookReferences?: string[];
+    penalty?: string;
     timestamp: string;
 }
 
@@ -131,22 +134,43 @@ const HistoryCalendar: React.FC<HistoryCalendarProps> = ({ history, onDelete }) 
                                 </section>
 
                                 <div className="grid gap-6">
-                                    <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Rule Applied</h4>
-                                        <p className="font-bold text-gray-900">{selectedEntry.ruleApplied}</p>
-                                    </div>
-                                    <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Article</h4>
-                                        <p className="font-bold text-gray-900">{selectedEntry.article}</p>
-                                    </div>
-                                    <div className="p-6 bg-orange-600 rounded-2xl shadow-lg text-white">
-                                        <h4 className="text-xs font-black text-orange-200 uppercase tracking-widest mb-2">Official Decision</h4>
-                                        <p className="text-xl font-bold">{selectedEntry.decision}</p>
-                                    </div>
-                                    <div className="p-6 bg-gray-900 rounded-2xl shadow-lg text-white">
-                                        <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Penalty / Result</h4>
-                                        <p className="text-lg font-medium">{selectedEntry.penalty}</p>
-                                    </div>
+                                    {selectedEntry.officialDecision && (
+                                        <div className="p-6 bg-indigo-600 rounded-2xl shadow-lg text-white">
+                                            <h4 className="text-xs font-black text-indigo-200 uppercase tracking-widest mb-2">Official Decision</h4>
+                                            <p className="text-xl font-bold">{selectedEntry.officialDecision}</p>
+                                            {selectedEntry.infractionType && (
+                                                <p className="text-sm mt-2 text-indigo-200">Type: {selectedEntry.infractionType}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                    {selectedEntry.situationSummary && (
+                                        <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                                            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Situation Summary</h4>
+                                            <p className="font-medium text-gray-900">{selectedEntry.situationSummary}</p>
+                                        </div>
+                                    )}
+                                    {selectedEntry.appliedRules && selectedEntry.appliedRules.length > 0 && (
+                                        <div className="p-6 bg-green-50 rounded-2xl border border-green-100">
+                                            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Applied Rules</h4>
+                                            <ul className="space-y-1">
+                                                {selectedEntry.appliedRules.map((rule, idx) => (
+                                                    <li key={idx} className="font-bold text-gray-900">• {rule}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {selectedEntry.detailedReasoning && (
+                                        <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                                            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Detailed Reasoning</h4>
+                                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedEntry.detailedReasoning}</p>
+                                        </div>
+                                    )}
+                                    {selectedEntry.penalty && (
+                                        <div className="p-6 bg-gray-900 rounded-2xl shadow-lg text-white">
+                                            <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Penalty / Result</h4>
+                                            <p className="text-lg font-medium">{selectedEntry.penalty}</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
