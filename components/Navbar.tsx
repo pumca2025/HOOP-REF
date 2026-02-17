@@ -41,8 +41,8 @@ const Navbar: React.FC<NavbarProps> = ({ view, setView, user, onLogout, onSwitch
                 </button>
 
                 <div className="flex items-center gap-2">
-                    <div className="bg-orange-600 p-1 rounded-lg">
-                        <Play className="w-5 h-5 text-white" />
+                    <div className="bg-orange-600 rounded-lg overflow-hidden">
+                        <img src="/Hoopref.png" alt="HoopRef Logo" className="w-7 h-7 object-cover" />
                     </div>
                     <h1 className="text-xl font-bold tracking-tight">HoopRef</h1>
                 </div>
@@ -71,8 +71,8 @@ const Navbar: React.FC<NavbarProps> = ({ view, setView, user, onLogout, onSwitch
                         >
                             <div className="p-6 bg-black text-white">
                                 <div className="flex justify-between items-center mb-6">
-                                    <div className="bg-orange-600 p-2 rounded-xl">
-                                        <Play className="w-6 h-6" />
+                                    <div className="bg-orange-600 rounded-xl overflow-hidden">
+                                        <img src="/Hoopref.png" alt="HoopRef Logo" className="w-8 h-8 object-cover" />
                                     </div>
                                     <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-full">
                                         <X className="w-6 h-6" />

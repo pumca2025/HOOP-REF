@@ -11,8 +11,8 @@ const SplashScreen: React.FC = () => {
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className="flex flex-col items-center"
             >
-                <div className="bg-orange-600 p-6 rounded-3xl shadow-2xl mb-6">
-                    <Dribbble className="w-20 h-20 text-white animate-pulse" />
+                <div className="bg-orange-600 rounded-3xl shadow-2xl mb-6 overflow-hidden">
+                    <img src="/Hoopref.png" alt="HoopRef Logo" className="w-24 h-24 object-cover animate-pulse" />
                 </div>
                 <motion.h1
                     initial={{ y: 20, opacity: 0 }}

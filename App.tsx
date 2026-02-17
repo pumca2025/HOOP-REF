@@ -139,8 +139,8 @@ const App: React.FC = () => {
               <div className="w-32 h-32 rounded-[40px] overflow-hidden border-4 border-orange-600 shadow-xl">
                 <img src={user?.picture || `https://ui-avatars.com/api/?name=${user?.name}&background=ea580c&color=fff&bold=true&size=128`} alt="Profile" className="w-full h-full object-cover" />
               </div>
-              <div className="absolute -bottom-2 -right-2 bg-orange-600 p-3 rounded-2xl text-white shadow-lg">
-                <Play className="w-5 h-5 fill-current" />
+              <div className="absolute -bottom-2 -right-2 bg-orange-600 rounded-2xl text-white shadow-lg overflow-hidden">
+                <img src="/Hoopref.png" alt="HoopRef Logo" className="w-7 h-7 object-cover" />
               </div>
             </div>
             <h2 className="text-3xl font-black text-gray-900 mb-1">{user?.name}</h2>
@@ -163,7 +163,7 @@ const App: React.FC = () => {
           <div className="max-w-2xl mx-auto space-y-8 animate-in slide-in-from-bottom-8 duration-700">
             <div className="bg-black text-white p-10 rounded-[40px] shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 p-10 opacity-10">
-                <Play className="w-40 h-40 text-orange-600" />
+                <img src="/Hoopref.png" alt="HoopRef Logo" className="w-40 h-40 object-cover" />
               </div>
               <div className="relative z-10">
                 <h2 className="text-4xl font-black uppercase tracking-tighter mb-4 italic">About HoopRef</h2>
@@ -180,8 +180,8 @@ const App: React.FC = () => {
               </h3>
               <div className="space-y-6">
                 <div className="flex gap-4">
-                  <div className="bg-orange-100 p-3 rounded-2xl h-fit text-orange-600">
-                    <Play className="w-6 h-6 fill-current" />
+                  <div className="bg-orange-100 rounded-2xl h-fit text-orange-600 overflow-hidden">
+                    <img src="/Hoopref.png" alt="HoopRef Logo" className="w-8 h-8 object-cover" />
                   </div>
                   <div>
                     <h4 className="font-bold text-gray-900">Official Rules 2024</h4>
@@ -189,8 +189,8 @@ const App: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="bg-black p-3 rounded-2xl h-fit text-white">
-                    <Play className="w-6 h-6 fill-current" />
+                  <div className="bg-black rounded-2xl h-fit text-white overflow-hidden">
+                    <img src="/Hoopref.png" alt="HoopRef Logo" className="w-8 h-8 object-cover" />
                   </div>
                   <div>
                     <h4 className="font-bold text-gray-900">Gemini 2.5 Flash Lite</h4>
@@ -212,8 +212,8 @@ const App: React.FC = () => {
             {/* Input Section */}
             <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
               <div className="flex items-center gap-3 mb-6">
-                <div className="bg-orange-600 p-2 rounded-xl text-white">
-                  <Play className="w-5 h-5 fill-current" />
+                <div className="bg-orange-600 rounded-xl text-white overflow-hidden">
+                  <img src="/Hoopref.png" alt="HoopRef Logo" className="w-7 h-7 object-cover" />
                 </div>
                 <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Analyze Play</h2>
               </div>
