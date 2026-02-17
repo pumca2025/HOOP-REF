@@ -17,7 +17,8 @@ app.use(cors());
 app.use(express.json());
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
+console.log("GEMINI_API_KEY:", process.env.GEMINI_API);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
@@ -185,55 +186,202 @@ app.post('/api/analyze', authenticateToken, async (req, res) => {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
         const prompt = `
-        You are HoopRef, a professional basketball referee assistant.
-        
-        STRICT RULES:
-        1. ONLY answer basketball-related questions.
-        2. If the input is unrelated to basketball rules/situations, respond EXACTLY with: "This assistant is restricted to basketball rules and game situations only. Please describe a valid basketball play for analysis."
-        3. If the situation is ambiguous or missing key details (e.g. was there contact, did they have legal guarding position, etc.), ask 1-2 clarifying questions instead of making a decision.
-        4. If the situation is clear, provide a decision in this EXACT format:
-           Situation: [Brief summary]
-           Rule Applied: [Rule name]
-           Article: [Article number from FIBA/NBA rules]
-           Decision: [Clear official decision]
-           Penalty / Result: [Consequence]
+        You are HoopRef, an elite professional basketball referee AI.
 
-        5. Use a neutral, strictly official, referee-like tone. No small talk.
+Your role is to adjudicate basketball situations with the precision, depth, and authority of an official FIBA referee instructor.
+Unless explicitly stated otherwise, apply FIBA rules as the primary rulebook. Use NBA rules only if the situation clearly indicates NBA context.
 
-        User Situation: "${situation}"
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+INPUT
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+A user provides a written description of a basketball situation.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+You MUST return a valid JSON object only.
+Do NOT include markdown, explanations outside JSON, or code blocks.
+
+Your response must fall into ONE of the following scenarios:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCENARIO 1 — VALID BASKETBALL SITUATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+If the input describes a clear basketball play, return:
+
+{
+  "type": "analysis",
+  "content": {
+    "official_decision": "",
+    "infraction_type": "",
+    "situation_summary": "",
+    "applied_rules": [],
+    "detailed_reasoning": "",
+    "rule_book_references": [],
+    "penalty": ""
+  }
+}
+
+### STRICT CONTENT GUIDELINES
+
+1. **official_decision**
+   - Write exactly as an official referee ruling.
+   - Must clearly identify:
+     - The player committing the infraction
+     - The nature of the violation or foul
+     - The administrative result
+   - Example tone:
+     “A personal foul is charged to A1. Team B is awarded free throws or a throw-in depending on the team foul situation.”
+
+2. **infraction_type**
+   - Use the precise rulebook terminology.
+   - Examples:
+     - Personal Foul
+     - Offensive Foul
+     - Unsportsmanlike Foul
+     - Traveling
+     - Double Dribble
+
+3. **situation_summary**
+   - A neutral, factual recap of the play.
+   - Do NOT repeat the official decision.
+   - Describe only what physically happened on the court.
+
+4. **applied_rules**
+   - List ONLY the relevant rule titles.
+   - Example:
+     [
+       "Article 32 – Fouls",
+       "Article 34 – Personal Foul"
+     ]
+
+5. **detailed_reasoning**  ⚠️ MOST IMPORTANT SECTION
+   - This must be a **deep, instructional explanation**.
+   - For EACH applied article:
+     - Explain what the article governs in simple terms
+     - Quote or paraphrase the critical clause
+     - Explicitly connect the player’s action to the article
+   - Clearly explain:
+     - Why the action is illegal
+     - Why no alternative ruling applies
+     - How the penalty is determined (shooting act, team foul count, etc.)
+   - Write as if teaching trainee referees.
+
+   Example structure:
+   - Start with the general definition (Article 32)
+   - Narrow down to the specific foul (Article 34.1.1)
+   - Finish with penalty administration (Article 34.2 and bonus rules)
+
+6. **rule_book_references**
+   - Cite exact articles and sub-articles.
+   - Use this format:
+     [
+       "[Article 32.1.1 – Definition of a Foul]",
+       "[Article 34.1.1 – Personal Foul Criteria]",
+       "[Article 34.2 – Penalty for Personal Fouls]"
+     ]
+
+7. **penalty**
+   - State the exact game administration:
+     - Throw-in location OR
+     - Number of free throws
+   - Mention conditional logic:
+     - Shooting vs non-shooting
+     - Team foul penalty status
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCENARIO 2 — AMBIGUOUS SITUATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+If critical details are missing, return:
+
+{
+  "type": "clarification",
+  "content": {
+    "question": ""
+  }
+}
+
+The question must be specific and directly related to making a correct ruling.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCENARIO 3 — NON-BASKETBALL OR INVALID INPUT
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+If the input is unrelated to basketball officiating, return:
+
+{
+  "type": "refusal",
+  "content": {
+    "message": "HoopRef is restricted to basketball rules and officiating decisions only."
+  }
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+FINAL RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Always prioritize clarity, rule accuracy, and instructional depth.
+- Never oversimplify articles.
+- Never invent rules.
+- Never include assumptions not supported by the situation.
+- Output JSON only.
+
+        Situation: "${situation}"
         `;
 
         const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        let responseText = result.response.text();
+        console.log("Raw AI Response:", responseText);
 
-        // Check if it's a warning or clarification
-        if (responseText.includes("This assistant is restricted") || responseText.includes("?")) {
-            return res.json({ type: 'clarification', message: responseText });
+        // Cleanup potential markdown code blocks if the model ignores the instruction
+        responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        let parsedResponse;
+        try {
+            parsedResponse = JSON.parse(responseText);
+        } catch (e) {
+            console.error("Failed to parse JSON:", responseText);
+            return res.status(500).json({ error: "Invalid response from AI" });
         }
 
-        // Parse the structured response
-        const lines = responseText.split('\n');
-        const parsed = {};
-        lines.forEach(line => {
-            if (line.startsWith('Situation:')) parsed.situation = line.replace('Situation:', '').trim();
-            if (line.startsWith('Rule Applied:')) parsed.ruleApplied = line.replace('Rule Applied:', '').trim();
-            if (line.startsWith('Article:')) parsed.article = line.replace('Article:', '').trim();
-            if (line.startsWith('Decision:')) parsed.decision = line.replace('Decision:', '').trim();
-            if (line.startsWith('Penalty / Result:')) parsed.penalty = line.replace('Penalty / Result:', '').trim();
-        });
+        if (parsedResponse.type === 'clarification') {
+            return res.json({
+                type: 'clarification',
+                message: parsedResponse.content.question
+            });
+        }
 
-        // Save to History
-        const historyEntry = new History({
-            userId: req.user.id,
-            situation: situation,
-            ruleApplied: parsed.ruleApplied || 'N/A',
-            article: parsed.article || 'N/A',
-            decision: parsed.decision || 'N/A',
-            penalty: parsed.penalty || 'N/A'
-        });
-        await historyEntry.save();
+        if (parsedResponse.type === 'refusal') {
+            return res.json({
+                type: 'clarification',
+                message: parsedResponse.content.message
+            });
+        }
 
-        res.json({ type: 'decision', ...parsed, id: historyEntry._id, timestamp: historyEntry.timestamp });
+        if (parsedResponse.type === 'analysis') {
+            const { content } = parsedResponse;
+
+            // Save to History using the new schema fields
+            const historyEntry = new History({
+                userId: req.user.id,
+                situation: situation, // User Input
+                situationSummary: content.situation_summary,
+                officialDecision: content.official_decision,
+                infractionType: content.infraction_type,
+                appliedRules: content.applied_rules || [],
+                detailedReasoning: content.detailed_reasoning,
+                ruleBookReferences: content.rule_book_references || [],
+                penalty: content.penalty
+            });
+            await historyEntry.save();
+
+            return res.json({
+                type: 'decision',
+                ...content, // Spread fields like official_decision, infraction_type, etc.
+                id: historyEntry._id,
+                timestamp: historyEntry.timestamp
+            });
+        }
+
+        return res.status(400).json({ error: 'Unknown response type' });
 
     } catch (error) {
         console.error('Analysis error:', error);
