@@ -137,7 +137,7 @@ const App: React.FC = () => {
           <div className="max-w-2xl mx-auto bg-white p-10 rounded-[40px] shadow-2xl border border-gray-100 text-center animate-in zoom-in-95 duration-500">
             <div className="relative inline-block mb-6">
               <div className="w-32 h-32 rounded-[40px] overflow-hidden border-4 border-orange-600 shadow-xl">
-                <img src={user?.picture || `https://ui-avatars.com/api/?name=${user?.name}&background=ea580c&color=fff&bold=true&size=128`} alt="Profile" className="w-full h-full object-cover" />
+                <img src={user?.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=ea580c&color=fff&bold=true&size=128`} alt="Profile" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=ea580c&color=fff&bold=true&size=128`; }} />
               </div>
               <div className="absolute -bottom-2 -right-2 bg-orange-600 rounded-2xl text-white shadow-lg overflow-hidden">
                 <img src="/Hoopref.png" alt="HoopRef Logo" className="w-7 h-7 object-cover" />
@@ -163,7 +163,7 @@ const App: React.FC = () => {
           <div className="max-w-2xl mx-auto space-y-8 animate-in slide-in-from-bottom-8 duration-700">
             <div className="bg-black text-white p-10 rounded-[40px] shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 p-10 opacity-10">
-                <img src="/Hoopref.png" alt="HoopRef Logo" className="w-40 h-40 object-cover" />
+
               </div>
               <div className="relative z-10">
                 <h2 className="text-4xl font-black uppercase tracking-tighter mb-4 italic">About HoopRef</h2>
@@ -193,8 +193,17 @@ const App: React.FC = () => {
                     <img src="/Hoopref.png" alt="HoopRef Logo" className="w-8 h-8 object-cover" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900">Gemini 2.5 Flash Lite</h4>
-                    <p className="text-gray-500 text-sm">Utilizing the latest AI models for zero-latency analysis.</p>
+                    <h4 className="font-bold text-gray-900">Designed & Developed By</h4>
+                    <p className="text-gray-500 text-sm">Deepak V - Certified TNBA B Panel Referee, Salem</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="bg-black rounded-2xl h-fit text-white overflow-hidden">
+                    <img src="/Hoopref.png" alt="HoopRef Logo" className="w-8 h-8 object-cover" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900">Hoopref - Version 1.0</h4>
+                    <p className="text-gray-500 text-sm">Copyright © 2026. All rights reserved.</p>
                   </div>
                 </div>
               </div>

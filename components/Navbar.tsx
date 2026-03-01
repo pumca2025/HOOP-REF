@@ -48,7 +48,12 @@ const Navbar: React.FC<NavbarProps> = ({ view, setView, user, onLogout, onSwitch
                 </div>
 
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20">
-                    <img src={user?.picture || `https://ui-avatars.com/api/?name=${user?.name}&background=ea580c&color=fff&bold=true`} alt="Profile" className="w-full h-full object-cover" />
+                    <img
+                        src={user?.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=ea580c&color=fff&bold=true`}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=ea580c&color=fff&bold=true`; }}
+                    />
                 </div>
             </header>
 
@@ -80,7 +85,12 @@ const Navbar: React.FC<NavbarProps> = ({ view, setView, user, onLogout, onSwitch
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-orange-600">
-                                        <img src={user?.picture || `https://ui-avatars.com/api/?name=${user?.name}&background=ea580c&color=fff&bold=true`} alt="Profile" className="w-full h-full object-cover" />
+                                        <img
+                                            src={user?.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=ea580c&color=fff&bold=true`}
+                                            alt="Profile"
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=ea580c&color=fff&bold=true`; }}
+                                        />
                                     </div>
                                     <div className="overflow-hidden">
                                         <h2 className="font-bold text-lg truncate">{user?.name}</h2>
