@@ -17,7 +17,7 @@ app.use(cors());
 app.use(express.json());
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 
 // MongoDB Connection
