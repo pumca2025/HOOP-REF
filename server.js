@@ -39,18 +39,39 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Google Auth Route
+// Accepts a GSI credential (ID Token JWT) from the frontend.
+// This works in Android WebViews/APKs where the old access_token flow fails.
 app.post('/api/auth/google', async (req, res) => {
     const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'No token provided' });
+
     try {
-        // Fetch user info using access token
-        const https = require('https');
-        const payload = await new Promise((resolve, reject) => {
-            https.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`, (res) => {
-                let data = '';
-                res.on('data', (chunk) => data += chunk);
-                res.on('end', () => resolve(JSON.parse(data)));
-            }).on('error', reject);
-        });
+        let payload;
+
+        // Detect whether the incoming token is a GSI credential (ID Token / JWT)
+        // JWT tokens have 3 base64 parts separated by dots
+        const isIdToken = token.split('.').length === 3;
+
+        if (isIdToken) {
+            // --- New GSI flow: verify the ID Token using google-auth-library ---
+            const ticket = await client.verifyIdToken({
+                idToken: token,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            payload = ticket.getPayload();
+        } else {
+            // --- Legacy access_token flow (browser fallback, kept for compatibility) ---
+            const https = require('https');
+            payload = await new Promise((resolve, reject) => {
+                https.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`, (res) => {
+                    let data = '';
+                    res.on('data', (chunk) => data += chunk);
+                    res.on('end', () => {
+                        try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
+                    });
+                }).on('error', reject);
+            });
+        }
 
         if (!payload || !payload.email) {
             return res.status(401).json({ error: 'Invalid token' });
