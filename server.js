@@ -329,7 +329,7 @@ FINAL RULES
 
         const result = await model.generateContent(prompt);
         let responseText = result.response.text();
-        console.log("Raw AI Response:", responseText);
+        // console.log("Raw AI Response:", responseText);
 
         // Cleanup potential markdown code blocks if the model ignores the instruction
         responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
