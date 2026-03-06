@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dribbble, Mail, Lock, User as UserIcon, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { login, register } from '../services/apiService';
@@ -31,43 +31,46 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, isLoading: externalLoading }) =>
     const [formData, setFormData] = useState({ email: '', password: '', name: '' });
     const [localLoading, setLocalLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [gsiReady, setGsiReady] = useState(false);
+    const gsiInitialized = useRef(false);
 
-    // Initialize Google GSI once the script is loaded
+    // Initialize Google GSI silently in the background — does NOT block the UI
     useEffect(() => {
-        const initGSI = () => {
+        const tryInit = () => {
+            if (gsiInitialized.current) return;
             if (window.google?.accounts?.id) {
                 window.google.accounts.id.initialize({
                     client_id: GOOGLE_CLIENT_ID,
                     callback: handleGoogleCredential,
-                    // Use 'select_account' so users can pick their Google account
-                    prompt_parent_id: undefined,
-                    ux_mode: 'popup', // popup works in most WebViews; fallback handled below
+                    ux_mode: 'popup',
                     cancel_on_tap_outside: false,
                 });
-                setGsiReady(true);
+                gsiInitialized.current = true;
             }
         };
 
-        // The GSI script may already be loaded (if async finished before render)
-        if (window.google?.accounts?.id) {
-            initGSI();
-        } else {
-            // Poll until the GSI script is loaded
-            const interval = setInterval(() => {
-                if (window.google?.accounts?.id) {
-                    clearInterval(interval);
-                    initGSI();
-                }
-            }, 100);
-            return () => clearInterval(interval);
-        }
+        // Try immediately, then poll every 200ms (stops once ready)
+        tryInit();
+        const interval = setInterval(() => {
+            if (gsiInitialized.current) {
+                clearInterval(interval);
+                return;
+            }
+            tryInit();
+        }, 200);
+
+        // Cleanup after 10 seconds max (don't poll forever)
+        const timeout = setTimeout(() => clearInterval(interval), 10000);
+
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timeout);
+        };
     }, []);
 
     // Called by GSI with a credential (ID Token JWT)
-    const handleGoogleCredential = async (credentialResponse: { credential?: string; error?: string }) => {
+    const handleGoogleCredential = (credentialResponse: { credential?: string }) => {
         if (!credentialResponse.credential) {
-            setError('Google Sign-In was cancelled or failed. Please try again.');
+            setError('Google Sign-In was cancelled. Please try again.');
             return;
         }
         // Pass the ID token to App.tsx which calls the backend
@@ -76,19 +79,33 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, isLoading: externalLoading }) =>
 
     const handleGoogleLogin = () => {
         setError(null);
-        if (!window.google?.accounts?.id) {
-            setError('Google Sign-In is not available. Please check your internet connection.');
+
+        // If GSI not initialized yet, wait a moment then try
+        if (!gsiInitialized.current) {
+            // Give it up to 3 seconds
+            let waited = 0;
+            const wait = setInterval(() => {
+                waited += 200;
+                if (gsiInitialized.current) {
+                    clearInterval(wait);
+                    triggerGooglePrompt();
+                } else if (waited >= 3000) {
+                    clearInterval(wait);
+                    setError('Google Sign-In unavailable. Please check your connection or use Email/Password.');
+                }
+            }, 200);
             return;
         }
+
+        triggerGooglePrompt();
+    };
+
+    const triggerGooglePrompt = () => {
         try {
-            window.google.accounts.id.prompt((notification: any) => {
-                if (notification.isNotDisplayed()) {
-                    // Popup was blocked or not displayed — this can happen in strict WebViews
-                    // Fallback: try rendering the button approach inline
-                    setError('Google popup was blocked. Please allow popups or use Email/Password login.');
-                }
-                if (notification.isSkippedMoment()) {
-                    // User dismissed the prompt
+            window.google!.accounts.id.prompt((notification: any) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    // Popup blocked in strict WebViews — show helpful message
+                    setError('Google popup was blocked. Please use Email/Password login instead.');
                 }
             });
         } catch (err) {
@@ -206,7 +223,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, isLoading: externalLoading }) =>
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-orange-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-600/20 hover:bg-black transition-all flex items-center justify-center gap-2 group"
+                        className="w-full bg-orange-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-600/20 hover:bg-black transition-all flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {isLoading ? (
                             <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
@@ -225,13 +242,14 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, isLoading: externalLoading }) =>
                     <div className="flex-1 h-px bg-gray-100" />
                 </div>
 
+                {/* Google button — always visible, never shows "Loading Google..." */}
                 <button
                     onClick={handleGoogleLogin}
-                    disabled={isLoading || !gsiReady}
-                    className="w-full flex items-center justify-center gap-4 bg-white border-2 border-gray-100 py-4 px-6 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-200 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                    disabled={isLoading}
+                    className="w-full flex items-center justify-center gap-4 bg-white border-2 border-gray-100 py-4 px-6 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-200 transition-all shadow-sm active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" className="w-6 h-6" alt="Google" />
-                    {gsiReady ? 'Continue with Google' : 'Loading Google...'}
+                    Continue with Google
                 </button>
 
                 <p className="mt-8 text-[10px] text-gray-400 leading-relaxed uppercase tracking-tighter">
