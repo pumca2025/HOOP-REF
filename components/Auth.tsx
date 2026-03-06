@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { useGoogleLogin } from '@react-oauth/google';
+import React, { useState, useEffect } from 'react';
 import { Dribbble, Mail, Lock, User as UserIcon, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { login, register } from '../services/apiService';
@@ -9,28 +8,91 @@ interface AuthProps {
     isLoading: boolean;
 }
 
+// Extend window to include Google GSI types
+declare global {
+    interface Window {
+        google?: {
+            accounts: {
+                id: {
+                    initialize: (config: any) => void;
+                    prompt: (callback?: (notification: any) => void) => void;
+                    cancel: () => void;
+                    renderButton: (element: HTMLElement, config: any) => void;
+                };
+            };
+        };
+    }
+}
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
 const Auth: React.FC<AuthProps> = ({ onSuccess, isLoading: externalLoading }) => {
     const [isRegister, setIsRegister] = useState(false);
     const [formData, setFormData] = useState({ email: '', password: '', name: '' });
     const [localLoading, setLocalLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [gsiReady, setGsiReady] = useState(false);
 
-    const googleLogin = useGoogleLogin({
-        onSuccess: (response) => handleGoogleAuth(response.access_token),
-        onError: () => setError('Google Login Failed'),
-    });
+    // Initialize Google GSI once the script is loaded
+    useEffect(() => {
+        const initGSI = () => {
+            if (window.google?.accounts?.id) {
+                window.google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleCredential,
+                    // Use 'select_account' so users can pick their Google account
+                    prompt_parent_id: undefined,
+                    ux_mode: 'popup', // popup works in most WebViews; fallback handled below
+                    cancel_on_tap_outside: false,
+                });
+                setGsiReady(true);
+            }
+        };
 
-    const handleGoogleAuth = async (googleToken: string) => {
-        setLocalLoading(true);
+        // The GSI script may already be loaded (if async finished before render)
+        if (window.google?.accounts?.id) {
+            initGSI();
+        } else {
+            // Poll until the GSI script is loaded
+            const interval = setInterval(() => {
+                if (window.google?.accounts?.id) {
+                    clearInterval(interval);
+                    initGSI();
+                }
+            }, 100);
+            return () => clearInterval(interval);
+        }
+    }, []);
+
+    // Called by GSI with a credential (ID Token JWT)
+    const handleGoogleCredential = async (credentialResponse: { credential?: string; error?: string }) => {
+        if (!credentialResponse.credential) {
+            setError('Google Sign-In was cancelled or failed. Please try again.');
+            return;
+        }
+        // Pass the ID token to App.tsx which calls the backend
+        onSuccess(credentialResponse.credential, null);
+    };
+
+    const handleGoogleLogin = () => {
         setError(null);
+        if (!window.google?.accounts?.id) {
+            setError('Google Sign-In is not available. Please check your internet connection.');
+            return;
+        }
         try {
-            // This is handled in App.tsx typically, but for consistency:
-            // onSuccess will be called with backend token
-            onSuccess(googleToken, null);
+            window.google.accounts.id.prompt((notification: any) => {
+                if (notification.isNotDisplayed()) {
+                    // Popup was blocked or not displayed — this can happen in strict WebViews
+                    // Fallback: try rendering the button approach inline
+                    setError('Google popup was blocked. Please allow popups or use Email/Password login.');
+                }
+                if (notification.isSkippedMoment()) {
+                    // User dismissed the prompt
+                }
+            });
         } catch (err) {
-            setError('Auth failed');
-        } finally {
-            setLocalLoading(false);
+            setError('Google Sign-In failed. Please use Email/Password login.');
         }
     };
 
@@ -164,12 +226,12 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, isLoading: externalLoading }) =>
                 </div>
 
                 <button
-                    onClick={() => googleLogin()}
-                    disabled={isLoading}
+                    onClick={handleGoogleLogin}
+                    disabled={isLoading || !gsiReady}
                     className="w-full flex items-center justify-center gap-4 bg-white border-2 border-gray-100 py-4 px-6 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-200 transition-all shadow-sm active:scale-95 disabled:opacity-50"
                 >
                     <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" className="w-6 h-6" alt="Google" />
-                    Continue with Google
+                    {gsiReady ? 'Continue with Google' : 'Loading Google...'}
                 </button>
 
                 <p className="mt-8 text-[10px] text-gray-400 leading-relaxed uppercase tracking-tighter">
