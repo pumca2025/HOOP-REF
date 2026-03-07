@@ -6,6 +6,8 @@ const { OAuth2Client } = require('google-auth-library');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const { sendOtpEmail } = require('./utils/mailer');
 
 dotenv.config();
 
@@ -88,7 +90,8 @@ app.post('/api/auth/google', async (req, res) => {
                 googleId: sub,
                 email,
                 name,
-                picture
+                picture,
+                isVerified: true
             });
             await user.save();
         } else {
@@ -100,6 +103,10 @@ app.post('/api/auth/google', async (req, res) => {
             }
             if (picture && user.picture !== picture) {
                 user.picture = picture;
+                updated = true;
+            }
+            if (!user.isVerified) {
+                user.isVerified = true;
                 updated = true;
             }
             if (updated) await user.save();
@@ -136,11 +143,80 @@ app.post('/api/auth/register', async (req, res) => {
         if (user) return res.status(400).json({ error: 'User already exists' });
 
         const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Generate a 6-digit numeric OTP code
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
         user = new User({
             email,
             password: hashedPassword,
-            name: name || email.split('@')[0]
+            name: name || email.split('@')[0],
+            verificationOtp: otp,
+            otpExpires,
+            isVerified: false
         });
+        await user.save();
+
+        try {
+            await sendOtpEmail(user.email, user.name, otp);
+            res.status(201).json({
+                message: 'Registration successful! Please check your email for the verification code.',
+                email: user.email
+            });
+        } catch (mailError) {
+            console.error('Email sending failed:', mailError);
+            res.status(201).json({
+                message: 'Registration successful, but we failed to send your verification code. Please contact support.',
+                error: 'MAIL_ERROR'
+            });
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({ error: 'Registration failed' });
+    }
+});
+
+// Resend OTP Route
+app.post('/api/auth/resend-otp', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    try {
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        if (user.isVerified) return res.status(400).json({ error: 'User is already verified' });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.verificationOtp = otp;
+        user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+        await user.save();
+
+        await sendOtpEmail(user.email, user.name, otp);
+        res.json({ message: 'New verification code sent to your email.' });
+    } catch (error) {
+        console.error('Resend OTP error:', error);
+        res.status(500).json({ error: 'Failed to resend code' });
+    }
+});
+
+// OTP Verification Route
+app.post('/api/auth/verify-otp', async (req, res) => {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ error: 'Email and OTP are required' });
+
+    try {
+        const user = await User.findOne({
+            email,
+            verificationOtp: otp,
+            otpExpires: { $gt: new Date() } // Check if OTP is not expired
+        });
+
+        if (!user) return res.status(400).json({ error: 'Invalid or expired verification code' });
+
+        user.isVerified = true;
+        user.verificationOtp = undefined;
+        user.otpExpires = undefined;
         await user.save();
 
         const accessToken = jwt.sign(
@@ -149,7 +225,8 @@ app.post('/api/auth/register', async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        res.status(201).json({
+        res.json({
+            message: 'Email verified successfully! You are now logged in.',
             token: accessToken,
             user: {
                 _id: user._id,
@@ -159,8 +236,8 @@ app.post('/api/auth/register', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({ error: 'Registration failed' });
+        console.error('Verification error:', error);
+        res.status(500).json({ error: 'Email verification failed' });
     }
 });
 
@@ -175,6 +252,10 @@ app.post('/api/auth/login', async (req, res) => {
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+
+        if (!user.isVerified) {
+            return res.status(401).json({ error: 'Please verify your email before logging in.' });
+        }
 
         const accessToken = jwt.sign(
             { id: user._id, email: user.email, name: user.name, picture: user.picture },

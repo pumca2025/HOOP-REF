@@ -6,6 +6,9 @@ const userSchema = new mongoose.Schema({
     password: { type: String },
     name: { type: String },
     picture: { type: String },
+    isVerified: { type: Boolean, default: false },
+    verificationOtp: { type: String },
+    otpExpires: { type: Date },
     createdAt: { type: Date, default: Date.now }
 });
 
