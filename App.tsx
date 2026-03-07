@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import HistoryCalendar from './components/HistoryCalendar';
 import RuleBook from './components/RuleBook';
 import AnalysisResult from './components/AnalysisResult';
+import VerifyOtp from './components/VerifyOtp';
 import {
   Play,
   Send,
@@ -26,17 +27,17 @@ const App: React.FC = () => {
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
   const [clarification, setClarification] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
 
   useEffect(() => {
     // Splash screen timer
     const timer = setTimeout(() => setShowSplash(false), 2500);
 
-    // Check for existing token
-    const token = localStorage.getItem('hoopref_token');
-    if (token) {
+    // Check for existing user in storage
+    const savedUser = localStorage.getItem('hoopref_user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
       setIsAuthenticated(true);
-      const savedUser = localStorage.getItem('hoopref_user');
-      if (savedUser) setUser(JSON.parse(savedUser));
     }
 
     return () => clearTimeout(timer);
@@ -57,15 +58,23 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAuthSuccess = async (tokenOrGoogleToken: string, manualUser?: any) => {
+  const handleAuthSuccess = async (tokenOrGoogleToken: string, manualUser?: any, email?: string) => {
+    // If an email is provided, it means we need to verify OTP
+    if (email) {
+      setPendingVerificationEmail(email);
+      setView(AppView.VERIFY_OTP);
+      return;
+    }
+
     setIsLoading(true);
     try {
       if (manualUser) {
-        // Manual Email/Password auth
+        // Manual Email/Password auth (already verified)
         localStorage.setItem('hoopref_token', tokenOrGoogleToken);
         localStorage.setItem('hoopref_user', JSON.stringify(manualUser));
         setUser(manualUser);
         setIsAuthenticated(true);
+        setView(AppView.ANALYZE);
       } else {
         // Google OAuth
         const response = await authWithGoogle(tokenOrGoogleToken);
@@ -74,10 +83,19 @@ const App: React.FC = () => {
         localStorage.setItem('hoopref_user', JSON.stringify(user));
         setUser(user);
         setIsAuthenticated(true);
+        setView(AppView.ANALYZE);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Auth error", err);
-      alert("Authentication failed");
+      const errorMsg = err.response?.data?.error || "Authentication failed";
+
+      // If error is "unverified", send to OTP screen
+      if (errorMsg.includes("verify your email") && manualUser?.email) {
+        setPendingVerificationEmail(manualUser.email);
+        setView(AppView.VERIFY_OTP);
+      } else {
+        alert(errorMsg);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -127,6 +145,25 @@ const App: React.FC = () => {
   if (showSplash) return <SplashScreen />;
 
   if (!isAuthenticated) {
+    if (view === AppView.VERIFY_OTP && pendingVerificationEmail) {
+      return (
+        <VerifyOtp
+          email={pendingVerificationEmail}
+          onSuccess={(token, user) => {
+            localStorage.setItem('hoopref_token', token);
+            localStorage.setItem('hoopref_user', JSON.stringify(user));
+            setUser(user);
+            setIsAuthenticated(true);
+            setView(AppView.ANALYZE);
+            setPendingVerificationEmail(null);
+          }}
+          onBack={() => {
+            setView(AppView.ANALYZE); // Goes back to Auth
+            setPendingVerificationEmail(null);
+          }}
+        />
+      );
+    }
     return <Auth onSuccess={handleAuthSuccess} isLoading={isLoading} />;
   }
 

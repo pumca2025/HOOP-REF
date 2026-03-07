@@ -15,5 +15,6 @@ export enum AppView {
   HISTORY = 'HISTORY',
   RULEBOOK = 'RULEBOOK',
   PROFILE = 'PROFILE',
-  ABOUT = 'ABOUT'
+  ABOUT = 'ABOUT',
+  VERIFY_OTP = 'VERIFY_OTP'
 }

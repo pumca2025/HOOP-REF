@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { login, register } from '../services/apiService';
 
 interface AuthProps {
-    onSuccess: (token: string, user: any) => void;
+    onSuccess: (tokenOrGoogleToken: string, user: any, email?: string) => void;
     isLoading: boolean;
 }
 
@@ -31,6 +31,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, isLoading: externalLoading }) =>
     const [formData, setFormData] = useState({ email: '', password: '', name: '' });
     const [localLoading, setLocalLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [registrationSuccess, setRegistrationSuccess] = useState<string | null>(null);
     const gsiInitialized = useRef(false);
 
     // Initialize Google GSI silently in the background — does NOT block the UI
@@ -118,11 +119,14 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, isLoading: externalLoading }) =>
         setLocalLoading(true);
         setError(null);
         try {
-            const response = isRegister
-                ? await register(formData)
-                : await login({ email: formData.email, password: formData.password });
-
-            onSuccess(response.data.token, response.data.user);
+            if (isRegister) {
+                const response = await register(formData);
+                // Call onSuccess with the email to trigger VerifyOtp screen
+                onSuccess('', null, formData.email);
+            } else {
+                const response = await login({ email: formData.email, password: formData.password });
+                onSuccess(response.data.token, response.data.user);
+            }
         } catch (err: any) {
             setError(err.response?.data?.error || 'Authentication failed');
         } finally {
@@ -148,18 +152,37 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, isLoading: externalLoading }) =>
 
                 <div className="flex bg-gray-100 p-1 rounded-2xl mb-8">
                     <button
-                        onClick={() => setIsRegister(false)}
+                        onClick={() => {
+                            setIsRegister(false);
+                            setRegistrationSuccess(null);
+                            setError(null);
+                        }}
                         className={`flex-1 py-3 rounded-xl font-bold transition-all ${!isRegister ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         Login
                     </button>
                     <button
-                        onClick={() => setIsRegister(true)}
+                        onClick={() => {
+                            setIsRegister(true);
+                            setRegistrationSuccess(null);
+                            setError(null);
+                        }}
                         className={`flex-1 py-3 rounded-xl font-bold transition-all ${isRegister ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         Register
                     </button>
                 </div>
+
+                {registrationSuccess && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="mb-8 p-6 bg-green-50 rounded-3xl border-2 border-green-100 text-left"
+                    >
+                        <p className="text-green-800 font-black uppercase tracking-tighter text-sm mb-1">Success!</p>
+                        <p className="text-green-600 font-medium text-sm leading-relaxed">{registrationSuccess}</p>
+                    </motion.div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4 text-left">
                     <AnimatePresence mode="wait">

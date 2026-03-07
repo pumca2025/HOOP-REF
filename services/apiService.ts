@@ -17,6 +17,8 @@ api.interceptors.request.use((config) => {
 export const authWithGoogle = (token: string) => api.post('/auth/google', { token });
 export const register = (data: any) => api.post('/auth/register', data);
 export const login = (data: any) => api.post('/auth/login', data);
+export const verifyOtp = (email: string, otp: string) => api.post('/auth/verify-otp', { email, otp });
+export const resendOtp = (email: string) => api.post('/auth/resend-otp', { email });
 export const analyzePlay = (situation: string) => api.post('/analyze', { situation });
 export const getHistory = () => api.get('/history');
 export const deleteHistory = (id: string) => api.delete(`/history/${id}`);
