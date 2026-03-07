@@ -1,5 +1,5 @@
 export const parseRulebook = (text: string) => {
-    const rules: { article: string; title: string; content: string }[] = [];
+    const rules: { article: string; title: string; content: string; fullContent: string }[] = [];
     const lines = text.split('\n');
     let currentArticle = '';
     let currentTitle = '';
@@ -9,10 +9,12 @@ export const parseRulebook = (text: string) => {
         const articleMatch = line.trim().match(/^Article\s+(\d+)\s+(.+)$/i);
         if (articleMatch) {
             if (currentArticle) {
+                const joined = currentContent.join(' ');
                 rules.push({
                     article: currentArticle,
                     title: currentTitle,
-                    content: currentContent.join(' ').substring(0, 150) + '...'
+                    content: joined.substring(0, 180) + (joined.length > 180 ? '...' : ''),
+                    fullContent: joined
                 });
             }
             currentArticle = articleMatch[1];
@@ -24,10 +26,12 @@ export const parseRulebook = (text: string) => {
     });
 
     if (currentArticle) {
+        const joined = currentContent.join(' ');
         rules.push({
             article: currentArticle,
             title: currentTitle,
-            content: currentContent.join(' ').substring(0, 150) + '...'
+            content: joined.substring(0, 180) + (joined.length > 180 ? '...' : ''),
+            fullContent: joined
         });
     }
 

@@ -258,22 +258,22 @@ const Auth: React.FC<AuthProps> = ({ onSuccess, isLoading: externalLoading }) =>
                         )}
                     </button>
                 </form>
-
+                {/* 
                 <div className="my-8 flex items-center gap-4">
                     <div className="flex-1 h-px bg-gray-100" />
                     <span className="text-xs font-black text-gray-300 uppercase">OR</span>
                     <div className="flex-1 h-px bg-gray-100" />
-                </div>
+                </div> */}
 
                 {/* Google button — always visible, never shows "Loading Google..." */}
-                <button
+                {/* <button
                     onClick={handleGoogleLogin}
                     disabled={isLoading}
                     className="w-full flex items-center justify-center gap-4 bg-white border-2 border-gray-100 py-4 px-6 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-200 transition-all shadow-sm active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" className="w-6 h-6" alt="Google" />
                     Continue with Google
-                </button>
+                </button> */}
 
                 <p className="mt-8 text-[10px] text-gray-400 leading-relaxed uppercase tracking-tighter">
                     By continuing, you agree to our <br />

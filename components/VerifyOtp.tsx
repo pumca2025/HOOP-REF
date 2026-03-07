@@ -85,88 +85,90 @@ const VerifyOtp: React.FC<VerifyOtpProps> = ({ email, onSuccess, onBack }) => {
     };
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-md w-full bg-white p-8 sm:p-10 rounded-[40px] shadow-2xl text-center border border-gray-100"
-        >
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6 relative bg-[url('https://www.transparenttextures.com/patterns/basketball.png')]">
             <button
                 onClick={onBack}
-                className="absolute top-8 left-8 p-3 hover:bg-gray-100 rounded-2xl transition-all text-gray-400"
+                className="absolute top-8 left-8 p-3 hover:bg-white rounded-2xl transition-all text-gray-400 hover:text-gray-700 shadow-sm"
             >
                 <ArrowLeft className="w-5 h-5" />
             </button>
 
-            <div className="bg-orange-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-                <img src="/Hoopref.png" alt="HoopRef" className="w-12 h-12" />
-            </div>
-
-            <h1 className="text-3xl font-black text-gray-900 mb-2 italic uppercase">Verify OTP</h1>
-            <p className="text-gray-500 mb-8 font-medium">
-                We've sent a 6-digit code to <br />
-                <span className="text-gray-900 font-bold">{email}</span>
-            </p>
-
-            <div className="flex justify-between gap-2 mb-8">
-                {otp.map((digit, idx) => (
-                    <input
-                        key={idx}
-                        ref={(el) => (inputRefs.current[idx] = el)}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleChange(idx, e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(idx, e)}
-                        className="w-12 h-16 text-center text-2xl font-black bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-orange-600 focus:bg-white outline-none transition-all"
-                    />
-                ))}
-            </div>
-
-            {error && (
-                <div className="mb-6 p-4 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3 text-red-600">
-                    <XCircle className="w-5 h-5 flex-shrink-0" />
-                    <p className="text-xs font-bold text-left">{error}</p>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-md w-full bg-white p-8 sm:p-10 rounded-[40px] shadow-2xl text-center border border-gray-100"
+            >
+                <div className="bg-orange-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+                    <img src="/Hoopref.png" alt="HoopRef" className="w-12 h-12" />
                 </div>
-            )}
 
-            {success ? (
-                <div className="mb-6 p-4 bg-green-50 rounded-2xl border border-green-100 flex items-center justify-center gap-3 text-green-600 animate-in zoom-in-95">
-                    <CheckCircle className="w-6 h-6" />
-                    <p className="font-bold">Verification Successful!</p>
+                <h1 className="text-3xl font-black text-gray-900 mb-2 italic uppercase">Verify OTP</h1>
+                <p className="text-gray-500 mb-8 font-medium">
+                    We've sent a 6-digit code to <br />
+                    <span className="text-gray-900 font-bold">{email}</span>
+                </p>
+
+                <div className="flex justify-between gap-2 mb-8">
+                    {otp.map((digit, idx) => (
+                        <input
+                            key={idx}
+                            ref={(el) => (inputRefs.current[idx] = el)}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={digit}
+                            onChange={(e) => handleChange(idx, e.target.value)}
+                            onKeyDown={(e) => handleKeyDown(idx, e)}
+                            className="w-12 h-16 text-center text-2xl font-black bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-orange-600 focus:bg-white outline-none transition-all"
+                        />
+                    ))}
                 </div>
-            ) : (
-                <button
-                    onClick={handleVerify}
-                    disabled={isLoading || otp.join('').length !== 6}
-                    className="w-full bg-orange-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-600/20 hover:bg-black transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
-                >
-                    {isLoading ? (
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                    ) : (
-                        'Verify & Continue'
-                    )}
-                </button>
-            )}
 
-            <div className="mt-8">
-                <p className="text-sm text-gray-500 font-medium mb-3">Didn't receive the code?</p>
-                <button
-                    onClick={handleResend}
-                    disabled={timer > 0 || resending}
-                    className={`flex items-center justify-center gap-2 mx-auto font-black uppercase tracking-widest text-xs transition-all ${timer > 0 ? 'text-gray-300' : 'text-orange-600 hover:text-black'}`}
-                >
-                    {resending ? (
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                        <>
-                            <RefreshCw className="w-4 h-4" />
-                            {timer > 0 ? `Resend Code (${timer}s)` : 'Resend Code'}
-                        </>
-                    )}
-                </button>
-            </div>
-        </motion.div>
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 rounded-2xl border border-red-100 flex items-center gap-3 text-red-600">
+                        <XCircle className="w-5 h-5 flex-shrink-0" />
+                        <p className="text-xs font-bold text-left">{error}</p>
+                    </div>
+                )}
+
+                {success ? (
+                    <div className="mb-6 p-4 bg-green-50 rounded-2xl border border-green-100 flex items-center justify-center gap-3 text-green-600 animate-in zoom-in-95">
+                        <CheckCircle className="w-6 h-6" />
+                        <p className="font-bold">Verification Successful!</p>
+                    </div>
+                ) : (
+                    <button
+                        onClick={handleVerify}
+                        disabled={isLoading || otp.join('').length !== 6}
+                        className="w-full bg-orange-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-600/20 hover:bg-black transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                    >
+                        {isLoading ? (
+                            <Loader2 className="w-6 h-6 animate-spin" />
+                        ) : (
+                            'Verify & Continue'
+                        )}
+                    </button>
+                )}
+
+                <div className="mt-8">
+                    <p className="text-sm text-gray-500 font-medium mb-3">Didn't receive the code?</p>
+                    <button
+                        onClick={handleResend}
+                        disabled={timer > 0 || resending}
+                        className={`flex items-center justify-center gap-2 mx-auto font-black uppercase tracking-widest text-xs transition-all ${timer > 0 ? 'text-gray-300' : 'text-orange-600 hover:text-black'}`}
+                    >
+                        {resending ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <>
+                                <RefreshCw className="w-4 h-4" />
+                                {timer > 0 ? `Resend Code (${timer}s)` : 'Resend Code'}
+                            </>
+                        )}
+                    </button>
+                </div>
+            </motion.div>
+        </div>
     );
 };
 

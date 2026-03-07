@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import HistoryCalendar from './components/HistoryCalendar';
 import RuleBook from './components/RuleBook';
 import AnalysisResult from './components/AnalysisResult';
+import ExplanationResult from './components/ExplanationResult';
 import VerifyOtp from './components/VerifyOtp';
 import {
   Play,
@@ -25,6 +26,7 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [inputQuery, setInputQuery] = useState('');
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
+  const [currentExplanation, setCurrentExplanation] = useState<any>(null);
   const [clarification, setClarification] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
@@ -115,6 +117,7 @@ const App: React.FC = () => {
     setError(null);
     setClarification(null);
     setCurrentAnalysis(null);
+    setCurrentExplanation(null);
 
     try {
       const response = await analyzePlay(inputQuery);
@@ -122,6 +125,8 @@ const App: React.FC = () => {
 
       if (data.type === 'clarification') {
         setClarification(data.message);
+      } else if (data.type === 'explanation') {
+        setCurrentExplanation(data);
       } else {
         setCurrentAnalysis(data);
         fetchHistory(); // Refresh history
@@ -266,7 +271,7 @@ const App: React.FC = () => {
 
               <textarea
                 className="w-full h-40 p-6 border-2 border-gray-50 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-600 outline-none resize-none text-lg font-medium text-gray-700 placeholder-gray-300 transition-all bg-gray-50/50"
-                placeholder="Describe a basketball situation..."
+                placeholder="Describe a play situation... or ask about a rule! (e.g. 'Player drove to basket and defender slid in front' or 'What is a charging foul?')"
                 value={inputQuery}
                 onChange={(e) => setInputQuery(e.target.value)}
               />
@@ -329,6 +334,13 @@ const App: React.FC = () => {
               <div className="bg-red-50 text-red-600 p-6 rounded-2xl border border-red-100 flex items-center gap-4">
                 <AlertCircle className="w-6 h-6" />
                 <p className="font-bold">{error}</p>
+              </div>
+            )}
+
+            {/* Explanation Result */}
+            {currentExplanation && (
+              <div className="animate-in slide-in-from-top-4 duration-500">
+                <ExplanationResult result={currentExplanation} />
               </div>
             )}
 
